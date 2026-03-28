@@ -6,11 +6,6 @@ using UnityEngine.InputSystem;
 
 namespace DungeonPrototype.Mana
 {
-    /// <summary>
-    /// Handles player interaction with mana crystals.
-    /// Players hold E-key to drain nearby crystals, transferring mana to the companion dragon.
-    /// Optimized with spatial caching to avoid repeated Physics queries.
-    /// </summary>
     public class ManaDrainInteractor : MonoBehaviour
     {
         [SerializeField] private DragonCompanion dragon;
@@ -21,13 +16,6 @@ namespace DungeonPrototype.Mana
 
         private ManaCrystal _activeCrystal;
         private float _drainedThisInteraction;
-        
-        /// <summary>Cached list of nearby crystals. Refreshed only when needed, not every frame.</summary>
-        private System.Collections.Generic.List<ManaCrystal> _nearbyNonDepletedCrystals = 
-            new System.Collections.Generic.List<ManaCrystal>();
-        
-        /// <summary>Tracks when the crystal cache was last updated (frame number).</summary>
-        private int _lastCachFrameUpdate = -999;
 
         private void Update()
         {
@@ -76,7 +64,6 @@ namespace DungeonPrototype.Mana
 
         private void TryStartDrain()
         {
-            // Find and cache nearest available crystal
             ManaCrystal nearest = FindNearestCrystal();
             if (nearest == null || dragon == null)
             {
@@ -88,10 +75,6 @@ namespace DungeonPrototype.Mana
             _activeCrystal.BeginDrain(1f);
         }
 
-        /// <summary>
-        /// Attempts to drain the active crystal, transferring the drained mana to the dragon.
-        /// Automatically stops if crystal becomes depleted.
-        /// </summary>
         private void ContinueDrain()
         {
             if (_activeCrystal == null)
@@ -115,9 +98,6 @@ namespace DungeonPrototype.Mana
             }
         }
 
-        /// <summary>
-        /// Stops the current drain interaction and broadcasts the final amount drained.
-        /// </summary>
         private void StopDrain()
         {
             if (_activeCrystal == null)
@@ -130,29 +110,17 @@ namespace DungeonPrototype.Mana
             _drainedThisInteraction = 0f;
         }
 
-        /// <summary>
-        /// Finds the nearest non-depleted crystal within interaction range.
-        /// Uses cached list to avoid repeated expensive Physics queries - only recalculates when needed.
-        /// </summary>
-        /// <returns>The closest ManaCrystal or null if none found.</returns>
         private ManaCrystal FindNearestCrystal()
         {
-            // Only refresh cache if this is a new drain attempt (typically once per E-key press)
-            // This avoids repeated Physics.OverlapSphere calls each frame during Update()
-            if (Time.frameCount != _lastCachFrameUpdate)
-            {
-                RefreshCrystalCache();
-                _lastCachFrameUpdate = Time.frameCount;
-            }
-
             Vector3 origin = sourcePoint != null ? sourcePoint.position : transform.position;
+            Collider[] hits = Physics.OverlapSphere(origin, interactRange, crystalMask, QueryTriggerInteraction.Collide);
+
             ManaCrystal nearest = null;
             float nearestSqr = float.MaxValue;
 
-            // Find nearest from cached list (only Physics.OverlapSphere done once per TryStartDrain)
-            for (int i = 0; i < _nearbyNonDepletedCrystals.Count; i++)
+            for (int i = 0; i < hits.Length; i++)
             {
-                ManaCrystal crystal = _nearbyNonDepletedCrystals[i];
+                ManaCrystal crystal = hits[i].GetComponentInParent<ManaCrystal>();
                 if (crystal == null || crystal.IsDepleted)
                 {
                     continue;
@@ -168,25 +136,6 @@ namespace DungeonPrototype.Mana
 
             return nearest;
         }
-
-        /// <summary>
-        /// Refreshes the cached list of nearby crystals by performing a Physics.OverlapSphere query.
-        /// Called once per drain attempt, not every frame.
-        /// </summary>
-        private void RefreshCrystalCache()
-        {
-            _nearbyNonDepletedCrystals.Clear();
-            Vector3 origin = sourcePoint != null ? sourcePoint.position : transform.position;
-            Collider[] hits = Physics.OverlapSphere(origin, interactRange, crystalMask, QueryTriggerInteraction.Collide);
-
-            for (int i = 0; i < hits.Length; i++)
-            {
-                ManaCrystal crystal = hits[i].GetComponentInParent<ManaCrystal>();
-                if (crystal != null && !crystal.IsDepleted)
-                {
-                    _nearbyNonDepletedCrystals.Add(crystal);
-                }
-            }
 
         private void OnDrawGizmosSelected()
         {
