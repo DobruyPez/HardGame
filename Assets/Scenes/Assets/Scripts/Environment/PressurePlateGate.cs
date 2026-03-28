@@ -37,7 +37,7 @@ namespace DungeonPrototype.Environment
                 return;
             }
 
-            bool worthy = _dragonOnPlate.ManaWeight >= requiredManaWeight;
+            bool worthy = _dragonOnPlate.CurrentMana >= requiredManaWeight;
             Color essence = _dragonOnPlate.EssenceColor;
 
             gate.SetOpen(worthy, essence);

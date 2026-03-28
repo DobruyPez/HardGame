@@ -25,6 +25,7 @@ namespace DungeonPrototype.Player
         private CharacterController _controller;
         private float _verticalVelocity;
         private float _pitch;
+        private bool _movementEnabled = true;
 
         private void Awake()
         {
@@ -89,6 +90,8 @@ namespace DungeonPrototype.Player
 
         private void HandleMove()
         {
+            if (!_movementEnabled) return;
+
             Vector2 moveInput = ReadMoveInput();
             Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
 
@@ -112,6 +115,8 @@ namespace DungeonPrototype.Player
 
         private void HandleLook()
         {
+            if (!_movementEnabled) return;
+
             Vector2 look = ReadLookInput();
             float yaw = look.x * mouseSensitivity;
             float pitchDelta = look.y * mouseSensitivity;
@@ -166,6 +171,15 @@ namespace DungeonPrototype.Player
 #else
             return new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
 #endif
+        }
+        public void SetMovementEnabled(bool enabled)
+        {
+            _movementEnabled = enabled;
+
+            if (!enabled)
+            {
+                _verticalVelocity = 0f;
+            }
         }
     }
 }

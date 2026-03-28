@@ -6,7 +6,7 @@ namespace DungeonPrototype.Dragon
 {
     public class DragonHungerSystem : MonoBehaviour
     {
-        [SerializeField] private DragonCompanion dragon;
+        [SerializeField] private DragonGrowthController dragon;
         [SerializeField] private PlayerHealth playerHealth;
         [SerializeField] private float starvingAfterSeconds = 90f;
         [SerializeField] private float damagePerTick = 4f;
