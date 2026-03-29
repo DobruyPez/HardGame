@@ -16,7 +16,7 @@ namespace DungeonPrototype.Dragon
         [SerializeField] private float manaDrainInterval = 5f;
         [SerializeField] private float manaDrainAmount = 1f;
 
-        public float CurrentMana { get; private set; }
+        public float CurrentMana; //{ get; private set; }
         public float MaxMana => maxMana;
         public Color EssenceColor => essenceByMana.Evaluate(Mathf.Clamp01(CurrentMana / maxMana));
 

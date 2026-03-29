@@ -187,6 +187,7 @@ namespace DungeonPrototype.Mana
                     _nearbyNonDepletedCrystals.Add(crystal);
                 }
             }
+        }
 
         private void OnDrawGizmosSelected()
         {

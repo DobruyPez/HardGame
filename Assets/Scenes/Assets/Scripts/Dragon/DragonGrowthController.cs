@@ -87,7 +87,7 @@ namespace DungeonPrototype.Dragon
 
             if (previous != CurrentStage)
             {
-                //UpdateStageModel(CurrentStage);
+                UpdateStageModel(CurrentStage);
                 GameEvents.RaiseDragonStageChanged(CurrentStage);
             }
         }
