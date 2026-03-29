@@ -27,6 +27,8 @@ namespace DungeonPrototype.Gameplay
         [SerializeField] private string fallbackGameplayScene = "DungeonPrototype_Prototype";
 
         private Text _objectiveText;
+        private GameObject _objectivePanel;
+        private GameObject _statusPanel;
         private GameObject _resultPanel;
         private Text _resultTitle;
         private Button _restartButton;
@@ -45,6 +47,7 @@ namespace DungeonPrototype.Gameplay
 
         private int _depletedCrystals;
         private bool _isFinished;
+        private bool _hudUnlocked;
 
         public bool IsFinished => _isFinished;
 
@@ -95,6 +98,8 @@ namespace DungeonPrototype.Gameplay
             }
 
             EnsureUi();
+            SetHudVisible(!GameIntroSequence.IsIntroRunning);
+            _hudUnlocked = !GameIntroSequence.IsIntroRunning;
             RefreshObjectiveText();
             RefreshStatusBars();
 
@@ -120,6 +125,14 @@ namespace DungeonPrototype.Gameplay
 
         private void Update()
         {
+            if (!_hudUnlocked && !GameIntroSequence.IsIntroRunning)
+            {
+                _hudUnlocked = true;
+                SetHudVisible(true);
+                RefreshObjectiveText();
+                RefreshStatusBars();
+            }
+
             UpdateDamageFeedback();
 
             if (_isFinished)
@@ -234,6 +247,7 @@ namespace DungeonPrototype.Gameplay
             Font font = GetDefaultFont();
 
             GameObject objectiveRoot = CreateUIObject("ObjectivePanel", canvasGo.transform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(520f, 120f), new Vector2(280f, -80f));
+            _objectivePanel = objectiveRoot;
             Image objectiveBg = objectiveRoot.AddComponent<Image>();
             objectiveBg.color = new Color(0.06f, 0.1f, 0.16f, 0.7f);
 
@@ -245,6 +259,7 @@ namespace DungeonPrototype.Gameplay
             _objectiveText.color = new Color(0.95f, 0.98f, 1f, 1f);
 
             GameObject statusRoot = CreateUIObject("StatusPanel", canvasGo.transform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(560f, 170f), new Vector2(300f, 110f));
+            _statusPanel = statusRoot;
             Image statusBg = statusRoot.AddComponent<Image>();
             statusBg.color = new Color(0.05f, 0.09f, 0.14f, 0.75f);
 
@@ -292,6 +307,24 @@ namespace DungeonPrototype.Gameplay
             _menuButton.onClick.AddListener(GoToMainMenu);
 
             _resultPanel.SetActive(false);
+        }
+
+        private void SetHudVisible(bool visible)
+        {
+            if (_objectivePanel != null)
+            {
+                _objectivePanel.SetActive(visible);
+            }
+
+            if (_statusPanel != null)
+            {
+                _statusPanel.SetActive(visible);
+            }
+
+            if (_damagePopupText != null)
+            {
+                _damagePopupText.gameObject.SetActive(visible);
+            }
         }
 
         private void RefreshStatusBars()

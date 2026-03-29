@@ -25,6 +25,8 @@ namespace DungeonPrototype.Player
         private CharacterController _controller;
         private float _verticalVelocity;
         private float _pitch;
+        private int _skipLookFrames;
+        private bool _pitchInitialized;
         private bool _movementEnabled = true;
 
         private void Awake()
@@ -39,6 +41,9 @@ namespace DungeonPrototype.Player
 
         private void Start()
         {
+            InitializePitchFromCamera();
+            _skipLookFrames = 2;
+
             if (lockCursorOnStart)
             {
                 Cursor.lockState = CursorLockMode.Locked;
@@ -117,6 +122,18 @@ namespace DungeonPrototype.Player
         {
             if (!_movementEnabled) return;
 
+            if (!_pitchInitialized)
+            {
+                InitializePitchFromCamera();
+            }
+
+            if (_skipLookFrames > 0)
+            {
+                _skipLookFrames--;
+                ReadLookInput();
+                return;
+            }
+
             Vector2 look = ReadLookInput();
             float yaw = look.x * mouseSensitivity;
             float pitchDelta = look.y * mouseSensitivity;
@@ -180,6 +197,29 @@ namespace DungeonPrototype.Player
             {
                 _verticalVelocity = 0f;
             }
+            else
+            {
+                _skipLookFrames = 1;
+                InitializePitchFromCamera();
+            }
+        }
+
+        private void InitializePitchFromCamera()
+        {
+            if (cameraPivot == null)
+            {
+                return;
+            }
+
+            float xAngle = cameraPivot.localEulerAngles.x;
+            if (xAngle > 180f)
+            {
+                xAngle -= 360f;
+            }
+
+            _pitch = Mathf.Clamp(xAngle, minPitch, maxPitch);
+            cameraPivot.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
+            _pitchInitialized = true;
         }
     }
 }

@@ -22,6 +22,9 @@ namespace DungeonPrototype.Guardians
         [SerializeField] private float proximityAggroDistance = 7f;
         [SerializeField] private bool requireLineOfSightForProximityAggro = true;
         [SerializeField] private float attackDistance = 2f;
+        [SerializeField] private float loseAggroDistance = 10f;
+        [SerializeField] private float maxChaseDistanceFromHome = 14f;
+        [SerializeField] private float returnHomeStopDistance = 1.25f;
 
         [Header("Combat")]
         [SerializeField] private float maxHealth = 60f;
@@ -41,6 +44,7 @@ namespace DungeonPrototype.Guardians
         private GuardianAggroHitboxRelay _aggroHitbox;
         private GuardianAttackHitboxRelay _attackHitbox;
         private Vector3 _home;
+        private bool _homeInitialized;
         private float _health;
         private float _nextAttackTime;
         private GuardianState _state = GuardianState.Dormant;
@@ -51,6 +55,7 @@ namespace DungeonPrototype.Guardians
         {
             _agent = GetComponent<NavMeshAgent>();
             _home = transform.position;
+            _homeInitialized = true;
             _health = maxHealth;
 
             EnsureHitboxes();
@@ -94,18 +99,37 @@ namespace DungeonPrototype.Guardians
 
             if (_state == GuardianState.Hunting)
             {
-                if (player != null)
+                if (player == null)
                 {
-                    SetDestinationSafe(player.position);
+                    StartReturnHome();
                 }
-
-                if (player != null)
+                else
                 {
-                    float dist = Vector3.Distance(transform.position, player.position);
-                    if (dist <= attackDistance)
+                    float distToPlayer = Vector3.Distance(transform.position, player.position);
+                    float distFromHome = Vector3.Distance(transform.position, _home);
+                    if (distToPlayer > Mathf.Max(attackDistance + 0.1f, loseAggroDistance) || distFromHome > Mathf.Max(1f, maxChaseDistanceFromHome))
                     {
-                        TryAttackPlayer();
+                        StartReturnHome();
                     }
+                    else
+                    {
+                        SetDestinationSafe(player.position);
+
+                        if (distToPlayer <= attackDistance)
+                        {
+                            TryAttackPlayer();
+                        }
+                    }
+                }
+            }
+
+            if (_state == GuardianState.Investigating)
+            {
+                float distToHome = Vector3.Distance(transform.position, _home);
+                if (distToHome <= Mathf.Max(0.2f, returnHomeStopDistance) && !CanSeePlayerByDistanceAndSight())
+                {
+                    _state = GuardianState.Dormant;
+                    SetAgentStoppedSafe(true);
                 }
             }
 
@@ -269,6 +293,18 @@ namespace DungeonPrototype.Guardians
             }
         }
 
+        private void StartReturnHome()
+        {
+            if (_state == GuardianState.Dead)
+            {
+                return;
+            }
+
+            _state = GuardianState.Investigating;
+            SetAgentStoppedSafe(false);
+            SetDestinationSafe(_home);
+        }
+
         private void HandleDragonRepel()
         {
             if (dragon == null || _state == GuardianState.Dead)
@@ -384,13 +420,21 @@ namespace DungeonPrototype.Guardians
 
             if (_agent.isOnNavMesh)
             {
-                _home = transform.position;
+                if (!_homeInitialized)
+                {
+                    _home = transform.position;
+                    _homeInitialized = true;
+                }
                 return true;
             }
 
             if (_agent.Warp(hit.position))
             {
-                _home = hit.position;
+                if (!_homeInitialized)
+                {
+                    _home = hit.position;
+                    _homeInitialized = true;
+                }
                 return _agent.isOnNavMesh;
             }
 
